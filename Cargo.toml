@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = [
+	"simd_find_char"
+]
+
+[workspace.dependencies]
+criterion = "0.5"
+

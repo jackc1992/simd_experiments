@@ -1,0 +1,11 @@
+[package]
+name = "simd_find_char"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "quote_bench"
+harness = false
