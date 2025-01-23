@@ -1,31 +1,47 @@
-use criterion::{Criterion, criterion_group, criterion_main};
-use simd_find_char::Input;
+#![feature(allocator_api)]
 
-fn create_test_data(size: usize, quote_frequency: usize) -> Vec<u8> {
+use criterion::{Criterion, criterion_group, criterion_main};
+use page_alloc::PageAllocator;
+use rand::{Rng, prelude::ThreadRng};
+use simd_find_char::Input;
+use utils::alloc::*;
+
+fn create_test_data(size: usize, quote_frequency: f64, rng: &mut ThreadRng) -> Vec<u8> {
     let mut data = vec![b'x'; size];
-    for i in (0..size).step_by(quote_frequency) {
-        data[i] = b'"';
-    }
+    (0..size).for_each(|i| {
+        if rng.gen_bool(1.0 / quote_frequency) {
+            data[i] = b'"';
+        }
+    });
     data
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
     // Test with different data sizes and quote frequencies
     let test_cases = vec![
-        (1024, 64),         // Small data, frequent quotes
-        (1024, 128),        // Small data, sparse quotes
-        (1024 * 1024, 64),  // Large data, frequent quotes
-        (1024 * 1024, 128), // Large data, sparse quotes
+        (1024, 64.0),
+        (1024, 128.0),
+        (1024 * 1024, 16.0),
+        (1024 * 1024, 64.0),
+        (1024 * 1024, 128.0),
     ];
 
+    let mut rng: ThreadRng = rand::thread_rng();
+    let alloc = PageAllocator::new(GB);
+
+    let mut vec: Vec<usize, &PageAllocator> = Vec::with_capacity_in(10, &alloc);
+    vec.push(42);
+
+    println!("could push to a vec!");
+
     for (size, freq) in test_cases {
-        let test_data = create_test_data(size, freq);
+        let test_data = create_test_data(size, freq, &mut rng);
         let input = Input::new(&test_data);
 
         let mut group = c.benchmark_group(format!("quotes_size_{}_freq_{}", size, freq));
 
         group.bench_function("trailing_zeros", |b| {
-            b.iter(|| input.find_quotes_trailing_zeros())
+            b.iter(|| input.find_quotes_trailing_zeros(&alloc))
         });
 
         group.bench_function("naive", |b| b.iter(|| input.find_quotes_naive()));

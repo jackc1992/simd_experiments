@@ -3,8 +3,8 @@ resolver = "2"
 members = [ "find_non_escaped_quote",
 	"simd_find_char",
 	"find_non_escaped_quote"
-]
+, "utils"]
 
 [workspace.dependencies]
 criterion = "0.5"
-
+rand = "0.8"

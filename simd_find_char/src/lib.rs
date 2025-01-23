@@ -1,6 +1,12 @@
 #![feature(portable_simd)]
+#![feature(allocator_api)]
 
-use std::simd::{Simd, cmp::SimdPartialEq};
+use std::{
+    alloc::Allocator,
+    simd::{Simd, cmp::SimdPartialEq},
+};
+
+use utils::alloc::page_alloc::PageAllocator;
 
 pub struct Input<'a> {
     input: &'a [u8],
@@ -11,9 +17,12 @@ impl<'a> Input<'a> {
         Self { input }
     }
 
-    pub fn find_quotes_trailing_zeros(&self) -> Vec<usize> {
+    pub fn find_quotes_trailing_zeros(
+        &self,
+        alloc: &'a PageAllocator,
+    ) -> Vec<usize, &'a PageAllocator> {
         let estimate = self.input.len() / 32;
-        let mut res: Vec<usize> = Vec::with_capacity(estimate);
+        let mut res = Vec::with_capacity_in(estimate, alloc);
         let mut pos = 0;
 
         while pos < self.input.len() {

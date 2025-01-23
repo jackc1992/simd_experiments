@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 criterion = { workspace = true }
+rand = { workspace = true }
+utils = { path="../utils"}
 
 [[bench]]
 name = "quote_bench"
