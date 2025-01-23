@@ -27,12 +27,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     ];
 
     let mut rng: ThreadRng = rand::thread_rng();
-    let alloc = PageAllocator::new(GB);
-
-    let mut vec: Vec<usize, &PageAllocator> = Vec::with_capacity_in(10, &alloc);
-    vec.push(42);
-
-    println!("could push to a vec!");
+    let alloc = PageAllocator::new(20 * GB);
 
     for (size, freq) in test_cases {
         let test_data = create_test_data(size, freq, &mut rng);
