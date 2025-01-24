@@ -1,5 +1,6 @@
 #![feature(allocator_api)]
 
+use bump_array::BumpArray;
 use criterion::{Criterion, criterion_group, criterion_main};
 use page_alloc::PageAllocator;
 use rand::{Rng, prelude::ThreadRng};

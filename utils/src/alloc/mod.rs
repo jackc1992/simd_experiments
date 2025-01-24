@@ -1,3 +1,4 @@
+pub mod bump_array;
 pub mod page_alloc;
 
 pub const KB: usize = 1024;

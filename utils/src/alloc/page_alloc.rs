@@ -1,7 +1,8 @@
 use std::{
     alloc::{AllocError, Allocator},
     cell::UnsafeCell,
-    ptr::{self, NonNull, null_mut},
+    ptr::{self, NonNull, null_mut, slice_from_raw_parts, slice_from_raw_parts_mut},
+    thread::current,
 };
 
 const PAGE_SIZE: usize = 4096;
@@ -66,24 +67,25 @@ unsafe impl Allocator for PageAllocator {
         layout: std::alloc::Layout,
     ) -> Result<ptr::NonNull<[u8]>, std::alloc::AllocError> {
         let current = unsafe { *self.current_ptr.get() };
-        let offset = current.align_offset(layout.align());
-        let new_ptr = unsafe { current.add(offset) };
 
-        if (new_ptr as usize + layout.size()) > (self.base_ptr as usize + self.len) {
-            return Err(AllocError);
-        }
-
-        let slice = ptr::slice_from_raw_parts_mut(new_ptr, layout.size());
+        let slice = ptr::slice_from_raw_parts_mut(current, layout.size());
         unsafe {
-            *self.current_ptr.get() = new_ptr.add(layout.size());
+            *self.current_ptr.get() = current.add(layout.size());
         }
         NonNull::new(slice).ok_or(AllocError)
     }
 
-    // no op
+    unsafe fn grow(
+        &self,
+        ptr: NonNull<u8>,
+        _old_layout: std::alloc::Layout,
+        new_layout: std::alloc::Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let slice = slice_from_raw_parts_mut(ptr.as_ptr(), new_layout.size());
+        NonNull::new(slice).ok_or(AllocError)
+    }
+
     unsafe fn deallocate(&self, ptr: ptr::NonNull<u8>, layout: std::alloc::Layout) {
-        if ptr.as_ptr().add(layout.size()) >= *self.current_ptr.get() {
-            unsafe { *self.current_ptr.get() = ptr.as_ptr() };
-        }
+        *self.current_ptr.get() = ptr.as_ptr()
     }
 }
