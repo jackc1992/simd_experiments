@@ -1,24 +1,49 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+#![feature(portable_simd)]
+
+use std::simd::{Simd, cmp::SimdPartialEq};
+
+// expands to 01010101010...
+const ODD_BITS: u64 = 0x5555555555555555;
+const EVEN_BITS: u64 = !ODD_BITS;
+
+#[inline]
+fn find_odd_backslashes(input: Simd<u8, 64>, prev_run: &mut u64) -> u64 {
+    // backslashes in this 64 byte chunk
+    let bs_bits = input.simd_eq(Simd::splat(b'\\')).to_bitmask();
+    // get the starting position of each run of bits
+    let start_edges = bs_bits & !(bs_bits << 1);
+
+    let even_start_mask = EVEN_BITS ^ *prev_run;
+    let even_starts = start_edges & even_start_mask;
+    let odd_starts = start_edges & !even_start_mask;
+    let even_carries = bs_bits.wrapping_add(even_starts);
+
+    let (mut odd_carries, ends_backslash) = bs_bits.overflowing_add(odd_starts);
+
+    odd_carries |= *prev_run;
+
+    *prev_run = u64::from(ends_backslash);
+
+    even_carries
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::simd::Simd;
+
+    use utils::print_binary_number;
+
+    use crate::find_odd_backslashes;
 
     #[test]
-    fn len_rounding() {
-        let len = 4096;
-        let len = (len + 4095) & !4095;
+    fn da_test() {
+        let epic_string = r#"0a\\\"#;
+        let input = Simd::load_or_default(epic_string.as_bytes());
+        let a = u64::from(true);
 
-        println!("len: {}, diff: {}", len, 0);
-        assert!(len % 4096 == 0);
-        assert!(len == 4096);
-    }
+        let res = find_odd_backslashes(input, &mut 0);
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        print_binary_number(res);
+        assert!(res == 0);
     }
 }
