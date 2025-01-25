@@ -1,8 +1,7 @@
 use std::{
     alloc::{AllocError, Allocator},
     cell::UnsafeCell,
-    ptr::{self, NonNull, null_mut, slice_from_raw_parts, slice_from_raw_parts_mut},
-    thread::current,
+    ptr::{self, NonNull, null_mut, slice_from_raw_parts_mut},
 };
 
 const PAGE_SIZE: usize = 4096;

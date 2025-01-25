@@ -38,7 +38,7 @@ impl<'a> Input<'a> {
         res
     }
 
-    // Baseline non-SIMD implementation
+    // Baseline non-SIMD implementation, slow af but kinda a vibe
     pub fn find_quotes_naive(&self) -> Vec<usize> {
         self.input
             .iter()

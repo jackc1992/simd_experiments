@@ -4,8 +4,15 @@
 use std::simd::{Simd, cmp::SimdPartialEq};
 
 // expands to 01010101010...
-const ODD_BITS: u64 = 0x5555555555555555;
-const EVEN_BITS: u64 = !ODD_BITS;
+const EVEN_BITS: u64 = 0x5555555555555555;
+const ODD_BITS: u64 = !EVEN_BITS;
+
+#[macro_export]
+macro_rules! static_cast_u32 {
+    ($v:expr) => {
+        ::std::mem::transmute::<_, u32>($v)
+    };
+}
 
 #[inline]
 fn find_odd_backslashes(input: Simd<u8, 64>, prev_run: &mut u64) -> u64 {
@@ -17,6 +24,7 @@ fn find_odd_backslashes(input: Simd<u8, 64>, prev_run: &mut u64) -> u64 {
     let even_start_mask = EVEN_BITS ^ *prev_run;
     let even_starts = start_edges & even_start_mask;
     let odd_starts = start_edges & !even_start_mask;
+
     let even_carries = bs_bits.wrapping_add(even_starts);
 
     let (mut odd_carries, ends_backslash) = bs_bits.overflowing_add(odd_starts);
@@ -25,9 +33,11 @@ fn find_odd_backslashes(input: Simd<u8, 64>, prev_run: &mut u64) -> u64 {
 
     *prev_run = u64::from(ends_backslash);
     let even_carry_ends = even_carries & !bs_bits;
+
     let odd_carry_ends = odd_carries & !bs_bits;
     let even_start_odd_end = even_carry_ends & ODD_BITS;
     let odd_start_even_end = odd_carry_ends & EVEN_BITS;
+
     even_start_odd_end | odd_start_even_end
 }
 
@@ -41,11 +51,13 @@ mod tests {
 
     #[test]
     fn da_test() {
-        let epic_string = r#"{ "\\\""}\"#;
+        let epic_string = r#"\aasdasdbhkajnwmdasujiknlfmasdjiofm;asdfiokjlm;a,dfjioklas;,fajioksmdfasdjiof,asdfioklmasdfbkhjna mdfikuhjnsdfauhjiknsdaaasdfjlkasdmfjlaknfasuhjnfmasdfjiomasdfjiokalsmdfp;ioklsmdfasoklpf,asdoklfasdfoklpmasdfp;oklasdfaiokp;fasp;iomfasdfp;ioma,sdfikljm;asdfaiokljsd\f"#;
+        let bytes = &epic_string.as_bytes()[0..64];
         let input = Simd::load_or_default(epic_string.as_bytes());
 
         let res = find_odd_backslashes(input, &mut 0);
 
+        println!("res 1, then res2");
         print_binary_number(res);
         assert!(res == 0);
     }
