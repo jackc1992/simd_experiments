@@ -1,4 +1,5 @@
 #![feature(portable_simd)]
+#![allow(dead_code)]
 
 use std::simd::{Simd, cmp::SimdPartialEq};
 
@@ -23,8 +24,11 @@ fn find_odd_backslashes(input: Simd<u8, 64>, prev_run: &mut u64) -> u64 {
     odd_carries |= *prev_run;
 
     *prev_run = u64::from(ends_backslash);
-
-    even_carries
+    let even_carry_ends = even_carries & !bs_bits;
+    let odd_carry_ends = odd_carries & !bs_bits;
+    let even_start_odd_end = even_carry_ends & ODD_BITS;
+    let odd_start_even_end = odd_carry_ends & EVEN_BITS;
+    even_start_odd_end | odd_start_even_end
 }
 
 #[cfg(test)]
@@ -37,9 +41,8 @@ mod tests {
 
     #[test]
     fn da_test() {
-        let epic_string = r#"0a\\\"#;
+        let epic_string = r#"{ "\\\""}\"#;
         let input = Simd::load_or_default(epic_string.as_bytes());
-        let a = u64::from(true);
 
         let res = find_odd_backslashes(input, &mut 0);
 
